@@ -1,0 +1,234 @@
+---
+title: "SDS 315 Homework 2"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=4.5, fig.width=7.5, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), message=FALSE, echo = FALSE)
+```
+
+```{r}
+#all packages needed
+
+library(ggplot2)
+library(kableExtra)
+library(tidyverse)
+```
+
+### Daphne Huynh - gdh853
+
+#### [GitHub Repository](https://github.com/giahandhuynh/315homework2)
+
+# *1.*
+
+### a.
+
+```{r}
+#reading in data set and creating ggplot object
+profs <- read.csv('profs.csv')
+profs$gender <- str_to_title(profs$gender)
+profsgg <- ggplot(profs)
+
+#plotting histogram of the evaluation variable
+profsgg + geom_histogram(aes(x=eval), fill = 'thistle', col = 'plum4') + labs(x = "Course Evaluation Score", y = "Frequency", title = "Distribution of Course Evaluation Scores")
+```
+
+##### The histogram above displays the distribution of course evaluation scores of UT professors from students, 1 being the lowest and 5 being the highest. The median evaluation score, or the middle point of the scores, is `r median(profs$eval)`.0 out of 5.0. This also happens to be the mode, or the most reoccurring data point. The graph is also slightly skewed left with a few data points on the lower end of the x-axis. This graph displays how, generally, UT professors are rated well by the student population. 
+
+### b.
+
+```{r}
+#plotting evaluation variable sorted into native vs. non-native english speakers
+profsgg + geom_boxplot(aes(x = native, y = eval), fill = 'thistle', col = 'plum4') + labs(x= "Native English Speaker?", y = "Course Evaluation Score?", title = "Distribution of Course Evaluation Score by Native English Speaker Status")
+
+```
+```{r results=FALSE}
+#calculating medians for each sorted group of the variable
+aggregate(eval~native, data = profs, median)
+```
+
+
+##### The median evaluation score for native English speaking professors is a 4.0 out of 5.0, while the score for non-native speakers is slightly lower at 3.6. If using only these numbers, it would seem that native English speakers are consistently rated higher, but what's also interesting is that the lowest ratings are also those of native speakers. So while native speakers are more consistently highly rated, they are also the recipients of the lowest ratings at UT.
+
+### c.
+```{r}
+#plotting faceted histograms of evaluation scores dependent on gender
+profsgg + geom_histogram(aes(x = eval), fill = 'thistle', col = 'plum4') + facet_wrap(~gender, nrow = 2) + labs(x = "Course Evaluation Score", y = "Frequency", title = "Distribution of Course Evaluation Scores by Gender")
+```
+```{r results = FALSE}
+#calculating medians for each sorted group of the variable
+aggregate(eval~gender, data = profs, median)
+```
+
+##### The middle point evaluation score for male professors is 4.15, while for female professors the median is 3.90. Similarly to the native vs. non-native English speaker comparison, even though male professors have a higher median, they also recieved the lowest scores between the two groups. What's also noteable is that male professors have more data, hinting that there is not a 50/50 split between the two genders at UT among professors.
+
+### d.
+```{r}
+#plotting plot of evaluation score and beauty scores
+profsgg + geom_point(aes(x = beauty, y = eval), col = 'plum4') + labs(x = "Course Evaluation Score", y= "Beauty Score", title = "Distribution of Course Evaluation Score vs. Beauty Score")
+```
+
+##### The correlation between a professor's course evaluation score and their beauty/attractiveness score is `r round(cor(profs$eval, profs$beauty), 2)`, where a 0 beauty score is average, positive/negative scores from there align with above/below average looks. This tells us that there is a very weak connection between these two variables, they generally do not effect each other. This can also be inferred, however, since the plot above has the points placed fairly randomly, there is no obviously discernible pattern. Although, since the coefficient is positive, what weak correlation there is would allude to an increase in beauty score as evaluation score increases.
+
+# *2.*
+
+### a.
+```{r}
+#reading in dataset
+bikes <- read.csv('bikeshare.csv')
+
+#creates a new data set that groups observations by hour, takes the mean of the total rentals for that hour, and rounds the result to two digits
+avgrentals <- round(summarize(group_by(bikes, hr), mean(total)), 2)
+colnames(avgrentals) <- c("hr", "mean")
+avgrentalsgg <- ggplot(avgrentals)
+
+#plots the hourly bike rentals throughout the hours of the day
+avgrentalsgg + geom_line(aes(x = hr, y = mean), col = 'plum4') + labs(x = "Hour of the Day", y = "Average Rentals", title = "Average Hourly Bike Rentals by Hour of the Day")
+```
+
+##### The above graph shows the average rentals of bike-sharing systems by hour of the day, with 0 being midnight and 23 being 11 PM, across all the days in Washington D.C. from 2011-2012. This distribution shows us at what times of the day bike rentals are lowest, and which are highest. There are two distinct spikes, the first around 8 AM and the second larger one around 5 PM, along with a smaller bump towards midday. Using this graph, its inferred that rentals are used most when residents to go to work, during lunchtime, and when residents get off of work and have the rest of their days to themselves.
+
+### b.
+```{r}
+#creates a new dataset that is group by both hour of day based of whether it is a working day, then finding the average rentals for that hour for whichever type of day
+workingdays <- bikes %>%
+  group_by(hr,workingday) %>%
+  summarize(rentals = mean(total))
+
+#renames the variable inputs from 0 or 1 to nonworking or working
+workingdays$workingday[workingdays$workingday == 0] <- 'Nonworking'
+workingdays$workingday[workingdays$workingday == 1] <- 'Working'
+
+#plots a faceted bar plot of rentals every hour for nonworking vs. working days
+ggplot(workingdays) + geom_line(aes(x = hr, y = rentals), col = 'plum4') + facet_wrap(~workingday) + labs(x = "Hour of the Day", y = "Average Rentals", title = "Average Rentals per Hour for Working vs. Non-Working Days")
+```
+
+##### Similar to the last graph, the one pictured above shows the average hourly bike rentals, but it has been seperated by working vs. non-working days. Non-working day is defined by any weekend or holiday, working days are neither, being standard weekdays. 
+
+##### By seperating the two, it is clear how different the rental patterns are. The spikes on the working day graph are like the ones in the previous, but even more extreme. This makes sense with the standard workday hours, 9 to 5. Those with standard full time jobs are using these bikes to go to and from their workplaces, which is why those spikes are present. However, on non-working days, the most riders are present from around 12 PM to 3 PM, indicating when D.C. residents are likely running errands or doing other leisurely activities. Overall, the rentals on working days align with usual workday hours, while rentals on non-workdays are steady throughout afternoon hours, but with less rentals across the day in total.
+
+### c.
+```{r}
+#creates a new data set that only includes rentals at the ninth hour of the day, groups the combinations of weather codes and working or nonworking days, and then makes a new variable for the average rentals in each of those unique combinations
+ninehour <- bikes %>%
+  filter(hr == 9) %>%
+  group_by(weathersit, workingday) %>%
+  summarize(rentals = mean(total))
+
+#renames the variable inputs from 0 or 1 to nonworking or working
+ninehour$workingday[ninehour$workingday == 0] <- 'Nonworking'
+ninehour$workingday[ninehour$workingday == 1] <- 'Working'
+  
+#plots the 9am rentals faceted by working vs. nonworking day and by the weather codes
+ggplot(ninehour) + geom_bar(aes(x = weathersit, y = rentals), stat = "identity", fill = 'thistle', col = 'plum4') + facet_wrap(~workingday) + labs(x = "Weather Code", y = "Average Rentals", title = "Average 9am Ridership by Each Weather Code for Working vs. Non-Working Day") 
+```
+
+##### This graph shows a more narrow viewpoint of bike rentals, only looking at rentals during the 9 AM hour by weather code and further seperated by working vs. non-working days. The weather codes are define as 1 being clear/partly cloudy, 2 is mist and possibly cloudy, and 3 is light precipitation or thunderstorm possibilities. Each bar shows the average ridership during the 9 AM hour for that individual weather code. What should be acknowledged is that there is a fourth weather code for heavy precipitaion and full on storms. Due to the lack of it's prescence, ridership during such weather conditions is nonexistent. 
+
+##### Even without accounting for weather, the bars further display how rentals during this hour on workdays is higher overall. But if looking at weather code differences, there is a larger drop between 1 and 2 on non-working days compared to working days, likely because on working days residents have little choice but to power through the weather. However, ridership for the third weather code is slightly similar, proportionally, on both days. The figure tells us that ridership across both types of days have a steep decline if the weather code is 3, however there are relatively equal rentals otherwise on working days, but not on non-working days.
+
+# *3.*
+
+### a.
+```{r}
+#reads in the capmetro data
+capmetro <- read.csv('capmetro_UT.csv')
+
+#reorders the day and month variables chronilogically rather than alphabetically
+capmetro = mutate(capmetro,
+day_of_week = factor(day_of_week,
+levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+month = factor(month,
+levels=c("Sep", "Oct","Nov")))
+
+#groups the dataset into unique combinations of day of week, month, and hour of the day and calculates the average boarding for each of those unique combinations
+capmetrogroup <- capmetro %>%
+  group_by(day_of_week, month, hour_of_day) %>%
+  summarize(avgboard = mean(boarding))
+
+#plots the average boardings each hour of the day faceted by day of the week with different lines for each month
+ggplot(capmetrogroup) + geom_line(aes(x = hour_of_day, y = avgboard, color = month)) + facet_wrap(~day_of_week) + labs(x = "Hour of Day", y = "Average Boardings", title = "Average Boardings by Hour by Day for Every Week and Month", color = "Month")
+```
+
+##### The figure above shows average boarding in the Austin CapMetro bus network during 15 minute intervals within each hour of the day between 6 AM and 10 PM every day from September to November of 2018, where 6 is 6 AM and 22 is 10 PM. The 7 plots represent each day of the week, and each differently colored line is a different month. Right off the bat it's evident that weekends have significantly less bus riders than during the week, this makes sense since students and workers are more likely to be using the bus to get to class and their workplaces. 
+
+##### If looking at only weekends or only weekdays, the peak boarding hour falls around a similar time, anywhere between the 15th-17th hour. The two weekend days vary a bit more, Saturdays peaking between the 17th-19th hour, while Sundays peak around the 12th hour. It's possible to attribute this to religious activity on Sundays. 
+
+##### Average boarding in September on Mondays is notably lower compared to other months and days. This question can be answered with the occurrence of Labor Day, which is always the first Monday during that month. Because this is a nationally recognized holiday, workplaces and schools are all closed. Thus, explaining why less patrons are frequenting the bus system. 
+
+##### It's also interesting how November boardings on Weds/Thurs/Fri only peak at around 110 people, while in other months that number can get as high as 150. Average boarding are lower likely because of the holiday week during Thanksgiving during the month, with the major holiday falling on Thursday, Black Friday the following day, and it's likely that many take off work that Wednesday to travel back home or simply to prepare for the festivities.
+
+### b.
+```{r}
+#assigns colors for weekday and weekend
+color_map <- c("weekend" = 'plum4', "weekday" = 'thistle')
+
+#plots the boardings by temperature facated by hour of the day with color differentiation for weekend vs weekdays
+ggplot(capmetro) + geom_point(aes(x = temperature, y = boarding, color = weekend)) + scale_color_manual(values = color_map) + facet_wrap(~hour_of_day)+ labs(x = "Temperature (in degrees F)", y = "Boardings", title = "Boardings by Temperature for Hour of the Day and Weekend vs. Weekdays")
+```
+
+##### The plots shown represent boarding based on the temperture at that time in degrees Farenheit. The two colors show which data points are from weekends and which are from weekdays. The graphs are also seperated by the hour of the day each boarding period occurred.
+
+##### When holding hour of the day and weekend status constant, temperature seems to have little to no effect on the number of UT students riding the bus. If temperature had a larger effect on boarding, there would be notable spikes on each extreme of the temperature, since the coldest days and hottest days should have the most people using the bus. However, regardless of temperature, it appears that boarding plateaus at a certain points during each hour. Therefore each graph forms an almost box shape, indicating that boarding is consistent despite the temperature outside. 
+
+# *4.*
+
+### a.
+```{r}
+#reads in dataset
+billboard <- read.csv('billboard.csv')
+
+#creates a new dataset that groups by song and performer, to account for songs with the same name by different artists, then creates a new variable that counts how many rows are within each of the song/performer groups, then arranging those counts from descending order
+topsongs <- billboard %>%
+  group_by(song, performer) %>%
+  summarize(weeksspent = n()) %>%
+  arrange(desc(weeksspent))
+
+#filters out all observation except for the top 10
+topsongs <- topsongs[1:10,]
+
+#creates a nicely formatted table of the top 10 charting songs and their performer
+topsongskbl <- kable(topsongs, col.names = c("Song", "Performer", "Count") , caption = "Top 10 Most Popular Songs by Total Number of Weeks on Billboard Top 100")
+kable_styling(topsongskbl, bootstrap_options = "striped")
+```
+
+##### The table above displays the 10 most popular songs that have been on the Billboars Top 100 from 1958 to 2021 based off the total number of weeks they spent on the chart. "Song" is the full song title, "Performer" is the artist of the track, and "Count" represents the total weeks the song spent on the Billboard chart. The songs are displayed in descending order of week count, with the longest charting song at the top and the shortest being at the bottom.
+
+### b. 
+```{r}
+#creates a new dataset that throws out all observations from 1958 and 2021 since the data is not complete, then groups by year, then creates a new variable that finds the length of the returned unique values (songs) there are within each of those year groups
+songcounts <- billboard %>%
+  filter(year != 1958 & year != 2021) %>%
+  group_by(year) %>%
+  summarize(uniquesongs = length(unique(song)), .groups = 'drop')
+
+#plots the count of unique songs each year
+ggplot(songcounts) + geom_line(aes(x = year, y = uniquesongs), col = 'plum4') + labs(x = "Year", y = "Number of Unique Songs", title = "Number of Unique Songs on the Billboard Top 100 Each Year")
+```
+
+##### This graph is showing the musical diversity of the Billboard Top 100 from 1959 to 2020. 1958 and 2021 were excluded from this graph since the years did not have completed data. Musical diversity in this case is defined by the number of unique songs that appeared on the chart during that year. 
+
+##### Though there are a few spikes, starting in 1965 all the way until the start of the 21st century, the unique song counts was on a steady decline, and hit it's absolute lowest right at the turn of the century. One inference could be made with the emergence of hit bands during those decades of decline who had absolute dominance over the industry. The most notable of which was The Beatles. And later in the 80s and 90s, boybands exploded in popularity. The explanation for the incline during the 2000s is slightly less clear, but it's assumed that music taste became less aligned from individual to individual. There was one sharp decline around 2010, however, and this aligns with when the major pop figures, Justin Bieber and One Direction. emerged.
+
+### c.
+```{r}
+#creates a new dataset that groups the unique songs by performer, then counts how many times each of those combinations appeared on the billboard top 100, then filters out all the songs that spent less than 10 weeks on the chart, then arranges the data in descending order of total weeks spent
+tenweekhit <- billboard %>%
+  group_by(song, performer) %>%
+  summarize(weeksspent = n()) %>%
+  filter(weeksspent >= 10) %>%
+  arrange(desc(weeksspent))
+
+#creates a new dataset that groups the songs from each performer together, then counts how many times each artist appeared with a ten week hit, then filters out all the artists with less than 30 ten week hits, and finally arranges the data in descending order of number of ten week hits
+tenweekhitartist <- tenweekhit %>%
+  group_by(performer) %>%
+  summarize(hits = n()) %>%
+  filter(hits >= 30) %>%
+  arrange(desc(hits))
+
+ggplot(tenweekhitartist) + geom_bar(aes(x = performer, y = hits), stat = "identity", fill = 'thistle', col = 'plum4') + theme(axis.text.x = element_text(angle=60, hjust=1)) + labs(x = "Artist Name", y = "Number of Ten Week Hits", title = "Artists with Over 30 Ten Week Hits on the Billboard Top 100")
+```
+
+##### The bar plot shows all the artists that have had 30 or more 10 week hits. A 10 week hit is defined as a song that charted for at least 10 weeks on the Billboard Top 100. Each bar belongs to an individual artist with each bar's height representing the precise number of 10 week hits they have.
